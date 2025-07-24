@@ -1,0 +1,102 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: rihab26/nodejs-app
+  REGISTRY: docker.io
+  GITOPS_REPO: git@github.com:RihabHaddad/GitOps.git
+  VAULT_ADDR: http://192.168.136.133:8200
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Vault Login using AppRole
+        id: vault-login
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SECRET_ID }}
+
+      - name: Read GitHub token from Vault
+        id: vault-github-token
+        uses: hashicorp/vault-action@v2
+        with:
+          url: ${{ env.VAULT_ADDR }}
+          method: token
+          token: ${{ steps.vault-login.outputs.client_token }}
+          secrets: 'secret/data/github#token'
+
+      - name: Checkout with GitHub token
+        uses: actions/checkout@v3
+        with:
+          repository: RihabHaddad/DevSecOps-pipeline
+          token: ${{ steps.vault-github-token.outputs.data_token }}
+
+      - name: Set image tag
+        id: image-tag
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+          -Dsonar.projectKey=nodejs-app \
+          -Dsonar.sources=. \
+          -Dsonar.login=$SONAR_TOKEN
+
+      - name: Dependency scan with Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype . -o table > grype-deps-report.txt
+          cat grype-deps-report.txt
+
+      - name: Security scan with Trivy (filesystem)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy fs --scanners vuln --severity HIGH,CRITICAL --format table --output trivy-fs-report.txt .
+          cat trivy-fs-report.txt
+
+      - name: Build Docker Image
+        run: docker build -t $IMAGE_NAME:${{ env.IMAGE_TAG }} .
+
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Scan Docker Image with Trivy
+        run: |
+          trivy image --timeout 10m --scanners vuln --severity HIGH,CRITICAL --format table --output trivy-report.txt $IMAGE_NAME:${{ env.IMAGE_TAG }}
+          cat trivy-report.txt
+
+      - name: Push Docker Image
+        run: docker push $IMAGE_NAME:${{ env.IMAGE_TAG }}
+
+
+      - name: Archive reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: reports
+          path: |
+            grype-deps-report.txt
+            trivy-fs-report.txt
+            trivy-report.txt
