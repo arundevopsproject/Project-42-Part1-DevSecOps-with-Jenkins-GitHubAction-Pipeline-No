@@ -9,7 +9,6 @@ env:
   IMAGE_NAME: rihab26/nodejs-app
   REGISTRY: docker.io
   GITOPS_REPO: git@github.com:RihabHaddad/GitOps.git
-  
 
 jobs:
   build-and-deploy:
@@ -23,7 +22,7 @@ jobs:
         id: vault-login
         uses: hashicorp/vault-action@v2
         with:
-          url: ${{ env.VAULT_ADDR }}
+          url: ${{ vars.VAULT_ADDR }}
           method: approle
           roleId: ${{ secrets.VAULT_ROLE_ID }}
           secretId: ${{ secrets.VAULT_SECRET_ID }}
@@ -32,7 +31,7 @@ jobs:
         id: vault-github-token
         uses: hashicorp/vault-action@v2
         with:
-          url: ${{ env.VAULT_ADDR }}
+          url: ${{ vars.VAULT_ADDR }}
           method: token
           token: ${{ steps.vault-login.outputs.client_token }}
           secrets: 'secret/data/github#token'
@@ -90,7 +89,6 @@ jobs:
 
       - name: Push Docker Image
         run: docker push $IMAGE_NAME:${{ env.IMAGE_TAG }}
-
 
       - name: Archive reports
         uses: actions/upload-artifact@v4
