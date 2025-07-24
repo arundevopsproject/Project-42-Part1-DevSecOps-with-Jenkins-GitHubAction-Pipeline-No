@@ -9,7 +9,7 @@ env:
   IMAGE_NAME: rihab26/nodejs-app
   REGISTRY: docker.io
   GITOPS_REPO: git@github.com:RihabHaddad/GitOps.git
-  VAULT_ADDR: http://192.168.136.133:8200
+  
 
 jobs:
   build-and-deploy:
