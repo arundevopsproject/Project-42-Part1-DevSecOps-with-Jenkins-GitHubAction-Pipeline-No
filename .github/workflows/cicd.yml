@@ -34,7 +34,7 @@ jobs:
           url: ${{ vars.VAULT_ADDR }}
           method: token
           token: ${{ steps.vault-login.outputs.client_token }}
-          secrets: 'secret/data/github#token'
+          secrets: 'secret/github#token'
 
       - name: Checkout with GitHub token
         uses: actions/checkout@v4
