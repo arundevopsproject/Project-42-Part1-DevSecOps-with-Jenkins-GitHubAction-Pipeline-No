@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Vault Login using AppRole
         id: vault-login
@@ -38,7 +38,7 @@ jobs:
           secrets: 'secret/data/github#token'
 
       - name: Checkout with GitHub token
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: RihabHaddad/DevSecOps-pipeline
           token: ${{ steps.vault-github-token.outputs.data_token }}
@@ -93,7 +93,7 @@ jobs:
 
 
       - name: Archive reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: reports
           path: |
