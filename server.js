@@ -16,13 +16,13 @@ const http = require('http');
 const EcoDrivingKPIs = require('./src/Models/EcoDrivingModel');
 const Accident = require('./src/Models/accidentModel');
 
-// Prometheus monitoring setup
+
 const prometheus = require('prom-client');
 const collectDefaultMetrics = prometheus.collectDefaultMetrics;
 
-collectDefaultMetrics(); // Collect default system metrics
+collectDefaultMetrics(); 
 
-// Define custom metrics
+
 const userCountMetric = new prometheus.Gauge({
   name: 'total_users_count',
   help: 'Total number of users in the database'
@@ -32,8 +32,14 @@ const carCountByBrandMetric = new prometheus.Gauge({
   name: 'total_cars_count_by_brand',
   help: 'Total number of cars by brand'
 });
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK',
+    app: 'Node.js Application',
+    timestamp: new Date().toISOString()
+  });
+});
 
-// Middleware pour le traitement des données JSON
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -43,23 +49,23 @@ app.use(function(req, res, next) {
   next();
 });
 
-// Connexion à MongoDB
+
 const env = process.env.NODE_ENV || 'development';
 const config = require(`./src/config/config.${env}.json`);
 
-// Utilisation de mongoose pour connecter à MongoDB
+
 mongoose.connect(config.MONGODB_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB établie'))
   .catch((err) => console.error('Erreur de connexion à MongoDB', err));
 
-// Routes d'authentification et autres
+
 app.use('/api/auth', authRoutes);
 app.use('/api/car', RegistrationcarRoutes);
 app.use('/api/Admins', AdminRoute);
 app.use('/', PassRoutes);
 app.use('/api/assures', AssureRoutes);
 
-// Route pour obtenir tous les utilisateurs
+
 app.get('/userscards', async (req, res) => {
   try {
     const users = await User.find().populate('registrationCards');
@@ -70,7 +76,7 @@ app.get('/userscards', async (req, res) => {
   }
 });
 
-// Route pour obtenir les KPI du conducteur
+
 app.get('/kpi/:driverId', async (req, res) => {
   try {
     const pfeMongoURI = process.env.MONGODB_CONNECTION_STRING;
@@ -277,6 +283,6 @@ const server = http.createServer(app);
 
 // Port d'écoute
 const port = process.env.PORT || 3001;
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
