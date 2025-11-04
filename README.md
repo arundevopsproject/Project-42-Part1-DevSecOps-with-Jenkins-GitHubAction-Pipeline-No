@@ -1,4 +1,6 @@
-# Project-43-Part1-DevSecOps-with-Jenkins-GitHubAction-Pipeline-No
+# Project-42-Part1-DevSecOps-with-Jenkins-GitHubAction-Pipeline-No
+
+https://devsecopsai.today/build-a-secure-devsecops-ci-cd-pipeline-with-jenkins-argocd-trivy-and-vault-hands-on-tutorial-47aeb65090b1
 
 ## Overview
 This project demonstrates a modern DevSecOps CI/CD pipeline using best practices to automate, secure, and monitor application delivery on Kubernetes.
